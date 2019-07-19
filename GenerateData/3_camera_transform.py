@@ -44,7 +44,7 @@ if __name__ == '__main__':
 	view_path = sys.argv[1] + '/rendering/rendering_metadata.txt' 
     if len(sys.argv) == 3:
 	vert_path = sys.argv[1]
-	view_path = vert_path.replace('xyz', sys.argv[2])
+	view_path = vert_path.replace('.xyz', sys.argv[2])
     vert = np.loadtxt(vert_path)
     position = vert[:, : 3] # * 0.57
     normal = vert[:, -3:]
