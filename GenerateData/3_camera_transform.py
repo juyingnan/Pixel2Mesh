@@ -9,6 +9,7 @@ import numpy as np
 import cPickle as pickle
 import cv2
 import os
+import sys
 
 def unit(v):
     norm = np.linalg.norm(v)
@@ -37,11 +38,14 @@ def camera_info(param):
 if __name__ == '__main__':
     
     vert_path = '1a0bc9ab92c915167ae33d942430658c/model_normal.xyz'
-    vert = np.loadtxt(vert_path)
-    position = vert[:, : 3] * 0.57
-    normal = vert[:, 3:]
-
     view_path = '1a0bc9ab92c915167ae33d942430658c/rendering/rendering_metadata.txt'
+    if len(sys.argv) >= 2:
+	vert_path = sys.argv[1] + '/model_normal.xyz'
+	view_path = sys.argv[1] + '/rendering/rendering_metadata.txt' 
+    vert = np.loadtxt(vert_path)
+    position = vert[:, : 3] # * 0.57
+    normal = vert[:, -3:]
+
     cam_params = np.loadtxt(view_path)
     for index, param in enumerate(cam_params):
         # camera tranform
@@ -53,8 +57,9 @@ if __name__ == '__main__':
         
         #### project for sure
         img_path = os.path.join(os.path.split(view_path)[0], '%02d.png'%index)
-        np.savetxt(img_path.replace('png','xyz'), train_data)
-        
+        # np.savetxt(img_path.replace('png','xyz'), train_data)
+	pickle.dump(train_data, open(img_path.replace('png', 'dat'), 'wb'))        
+
         img = cv2.imread(img_path)
         img = cv2.resize(img, (224,224))
         

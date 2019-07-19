@@ -5,6 +5,7 @@ Created on Fri Oct 26 16:22:12 2018
 @author: wnylol
 """
 
+import sys
 import numpy as np
 from scipy.spatial import ConvexHull
 
@@ -81,6 +82,9 @@ if __name__ == '__main__':
     vert_path = '1a0bc9ab92c915167ae33d942430658c/model.xyz'
     mesh_path = '1a0bc9ab92c915167ae33d942430658c/model.obj'
     
+    if len(sys.argv) >= 2:
+	vert_path = sys.argv[1] + '/model.xyz'
+	mesh_path = sys.argv[1] + '/model.obj'
     face_pts, face_axis = readFaceInfo(mesh_path)
     vert = np.loadtxt(vert_path)
     vert_with_normal = generate_normal(vert, face_pts, face_axis)
