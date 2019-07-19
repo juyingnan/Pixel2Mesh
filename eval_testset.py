@@ -16,18 +16,19 @@
 #
 import os, sys
 import tensorflow as tf
-from pixel2mesh.models import GCN
-from pixel2mesh.fetcher import *
-from pixel2mesh.cd_dist import nn_distance
+from p2m.models import GCN
+from p2m.fetcher import *
+from p2m.chamfer import nn_distance
 sys.path.append('external')
 from tf_approxmatch import approx_match, match_cost
+os.environ['CUDA_VISIBLE_DEVICES'] = '2'
 
 # Settings
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string('data_list', 'Data/test_list.txt', 'Data list path.')
 flags.DEFINE_float('learning_rate', 3e-5, 'Initial learning rate.')
-flags.DEFINE_integer('hidden', 192, 'Number of units in  hidden layer.')
+flags.DEFINE_integer('hidden', 256, 'Number of units in  hidden layer.')
 flags.DEFINE_integer('feat_dim', 963, 'Number of units in perceptual feature layer.')
 flags.DEFINE_integer('coord_dim', 3, 'Number of units in output layer.') 
 flags.DEFINE_float('weight_decay', 5e-6, 'Weight decay for L2 loss.')
@@ -101,19 +102,21 @@ dist1,idx1,dist2,idx2 = nn_distance(xyz1, xyz2)
 match = approx_match(xyz1, xyz2)
 emd_dist = match_cost(xyz1, xyz2, match)
 
-config=tf.ConfigProto()
+config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True)
 config.gpu_options.allow_growth=True
 config.allow_soft_placement=True
 sess = tf.Session(config=config)
 sess.run(tf.global_variables_initializer())
 model.load(sess)
+print('Model checkpoint loaded.')
 
 # Construct feed dictionary
 pkl = pickle.load(open('Data/ellipsoid/info_ellipsoid.dat', 'rb'))
 feed_dict = construct_feed_dict(pkl, placeholders)
 
 ###
-class_name = {'02828884':'bench','03001627':'chair','03636649':'lamp','03691459':'speaker','04090263':'firearm','04379243':'table','04530566':'watercraft','02691156':'plane','02933112':'cabinet','02958343':'car','03211117':'monitor','04256520':'couch','04401088':'cellphone'}
+# class_name = {'02828884':'bench','03001627':'chair','03636649':'lamp','03691459':'speaker','04090263':'firearm','04379243':'table','04530566':'watercraft','02691156':'plane','02933112':'cabinet','02958343':'car','03211117':'monitor','04256520':'couch','04401088':'cellphone'}
+class_name = {'0':FLAGS.data_list, '1': 'top', '2': 'horizontal', '3': '45 degree'}
 model_number = {i:0 for i in class_name}
 sum_f = {i:0 for i in class_name}
 sum_cd = {i:0 for i in class_name}
@@ -122,6 +125,7 @@ sum_emd = {i:0 for i in class_name}
 for iters in range(train_number):
 	# Fetch training data
 	img_inp, label, model_id = data.fetch()
+	print(model_id)
 	feed_dict.update({placeholders['img_inp']: img_inp})
 	feed_dict.update({placeholders['labels']: label})
 	# Training step
@@ -131,12 +135,22 @@ for iters in range(train_number):
 	d1,i1,d2,i2,emd = sess.run([dist1,idx1,dist2,idx2, emd_dist], feed_dict={xyz1:label,xyz2:predict})
 	cd = np.mean(d1) + np.mean(d2)
 
-	class_id = model_id.split('_')[0]
+	# class_id = model_id.split('_')[0]
+	class_id = '0'
 	model_number[class_id] += 1.0
 
 	sum_f[class_id] += f_score(label,predict,d1,d2,[0.0001, 0.0002])
 	sum_cd[class_id] += cd # cd is the mean of all distance
 	sum_emd[class_id] += emd[0] # emd is the sum of all distance
+
+	# sub-id
+	class_id = str(int(model_id.split('.')[0])//8 + 1)
+	print('sub_id', class_id)
+        model_number[class_id] += 1.0
+	sum_f[class_id] += f_score(label,predict,d1,d2,[0.0001, 0.0002])
+	sum_cd[class_id] += cd # cd is the mean of all distance
+	sum_emd[class_id] += emd[0]	
+	
 	print 'processed number', iters
 
 log = open('record_evaluation.txt', 'a')
