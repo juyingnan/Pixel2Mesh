@@ -19,8 +19,8 @@ from p2m.utils import *
 from p2m.models import GCN
 from p2m.fetcher import *
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"]="2"  # specify which GPU(s) to be used
 # Set random seed
 seed = 1024
 np.random.seed(seed)
@@ -31,11 +31,11 @@ flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string('data_list', 'Data/train_list.txt', 'Data list.') # training data list
 flags.DEFINE_float('learning_rate', 1e-5, 'Initial learning rate.')
-flags.DEFINE_integer('epochs', 5, 'Number of epochs to train.')
+flags.DEFINE_integer('epochs', 100, 'Number of epochs to train.')
 flags.DEFINE_integer('hidden', 256, 'Number of units in hidden layer.') # gcn hidden layer channel
 flags.DEFINE_integer('feat_dim', 963, 'Number of units in feature layer.') # image feature dim
 flags.DEFINE_integer('coord_dim', 3, 'Number of units in output layer.') 
-flags.DEFINE_float('weight_decay', 5e-6, 'Weight decay for L2 loss.')
+flags.DEFINE_float('weight_decay', 1e-6, 'Weight decay for L2 loss.')
 
 # Define placeholders(dict) and model
 num_blocks = 3
@@ -58,12 +58,12 @@ model = GCN(placeholders, logging=True)
 data = DataFetcher(FLAGS.data_list)
 data.setDaemon(True) ####
 data.start()
-config=tf.ConfigProto()
+config=tf.ConfigProto(allow_soft_placement=True)
 #config.gpu_options.allow_growth=True
-config.allow_soft_placement=True
+# config.allow_soft_placement=True
 sess = tf.Session(config=config)
 sess.run(tf.global_variables_initializer())
-#model.load(sess)
+model.load(sess)
 
 # Train graph model
 train_loss = open('record_train_loss.txt', 'a')
@@ -89,6 +89,7 @@ for epoch in range(FLAGS.epochs):
 			print 'Mean loss = %f, iter loss = %f, %d'%(mean_loss,dists,data.queue.qsize())
 	# Save model
 	model.save(sess)
+	# print(epoch)
 	train_loss.write('Epoch %d, loss %f\n'%(epoch+1, mean_loss))
 	train_loss.flush()
 
