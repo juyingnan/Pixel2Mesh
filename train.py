@@ -35,7 +35,7 @@ flags.DEFINE_integer('epochs', 100, 'Number of epochs to train.')
 flags.DEFINE_integer('hidden', 256, 'Number of units in hidden layer.') # gcn hidden layer channel
 flags.DEFINE_integer('feat_dim', 963, 'Number of units in feature layer.') # image feature dim
 flags.DEFINE_integer('coord_dim', 3, 'Number of units in output layer.') 
-flags.DEFINE_float('weight_decay', 1e-6, 'Weight decay for L2 loss.')
+flags.DEFINE_float('weight_decay', 5e-6, 'Weight decay for L2 loss.')
 
 # Define placeholders(dict) and model
 num_blocks = 3
