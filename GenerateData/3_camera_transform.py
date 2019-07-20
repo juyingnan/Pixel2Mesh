@@ -43,8 +43,8 @@ if __name__ == '__main__':
 	vert_path = sys.argv[1] + '/model_normal.xyz'
 	view_path = sys.argv[1] + '/rendering/rendering_metadata.txt' 
     if len(sys.argv) == 3:
-	vert_path = sys.argv[1]
-	view_path = vert_path.replace('.xyz', sys.argv[2])
+	vert_path = sys.argv[1].strip()
+	view_path = vert_path.replace('.xyz', sys.argv[2]).strip()
     vert = np.loadtxt(vert_path)
     position = vert[:, : 3] # * 0.57
     normal = vert[:, -3:]
